@@ -3,8 +3,8 @@
 # EOF (end-of-file) token is used to indicate that
 # there is no more input left for lexical analysis
 INTEGER = 'INTEGER'
-ADD, MINUS, MUL, DIV = 'ADD', 'MINUS', 'MUL', 'DIV'
-LEFTP, RIGHTP = '(', ')'
+ADD, MINUS, MUL, DIV, POW = 'ADD', 'MINUS', 'MUL', 'DIV', 'POW'
+LEFTP, RIGHTP = 'LEFTP', 'RIGHTP'
 EOF = 'EOF'
 
 
@@ -87,6 +87,9 @@ class Lexer(object):
 
             if self.current_char == '*':
                 self.advance()
+                if self.current_char == "*":
+                    self.advance()
+                    return Token(POW, '**')
                 return Token(MUL, '*')
 
             if self.current_char == '/':
@@ -110,7 +113,8 @@ class Lexer(object):
 # factor: INTEGER
 # value: factor | parenthesis
 # parenthesis: LEFTP expr RIGHTP
-# multiplication: value ((MUL | DIV) value)*
+# power: value (POW value)*
+# multiplication: power ((MUL | DIV) power)*
 # addition: multiplication ((ADD | MINUS) multiplication)*
 # expr: additon
 class Interpreter(object):
@@ -162,22 +166,33 @@ class Interpreter(object):
         self.eat(RIGHTP)           
         return result
 
+    def power(self):
+        """Power parser / interpreter
+        power: value (POW value)*
+        """
+        result = self.value()
+        while self.current_token.type == POW:
+            self.eat(POW)
+            result = result ** self.value()
+
+        return result
+
     def multiplication(self):
         """Arithmetic expression parser / interpreter.
 
         multiplication: value ((MUL | DIV) value)*
         """ 
 
-        result = self.value()
+        result = self.power()
 
         while self.current_token.type in (MUL, DIV):
             token = self.current_token
             if token.type == MUL:
                 self.eat(MUL)
-                result = result * self.value()
+                result = result * self.power()
             elif token.type == DIV:
                 self.eat(DIV)
-                result = result / self.value()
+                result = result / self.power()
 
         return result
 
