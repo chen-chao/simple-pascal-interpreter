@@ -2,7 +2,10 @@
 #
 # EOF (end-of-file) token is used to indicate that
 # there is no more input left for lexical analysis
-INTEGER, ADD, MINUS, MUL, DIV, EOF = 'INTEGER', 'ADD', 'MINUS', 'MUL', 'DIV', 'EOF'
+INTEGER = 'INTEGER'
+ADD, MINUS, MUL, DIV = 'ADD', 'MINUS', 'MUL', 'DIV'
+LEFTP, RIGHTP = '(', ')'
+EOF = 'EOF'
 
 
 class Token(object):
@@ -66,7 +69,6 @@ class Lexer(object):
         apart into tokens. One token at a time.
         """
         while self.current_char is not None:
-            # print('current char: ', self.current_char)
 
             if self.current_char.isspace():
                 self.skip_whitespace()
@@ -91,15 +93,26 @@ class Lexer(object):
                 self.advance()
                 return Token(DIV, '/')
 
+            if self.current_char == '(':
+                self.advance()
+                return Token(LEFTP, '(')
+
+            if self.current_char == ')':
+                self.advance()
+                return Token(RIGHTP, ')')
+
             self.error()
 
         return Token(EOF, None)
 
 
 # rules:
-# expr1: factor ((MUL | DIV) factor)*
-# expr2: expr1 ((ADD | MINUS) expr1)*
 # factor: INTEGER
+# value: factor | parenthesis
+# parenthesis: LEFTP expr RIGHTP
+# multiplication: value ((MUL | DIV) value)*
+# addition: multiplication ((ADD | MINUS) multiplication)*
+# expr: additon
 class Interpreter(object):
     def __init__(self, lexer):
         self.lexer = lexer
@@ -114,6 +127,8 @@ class Interpreter(object):
         # type and if they match then "eat" the current token
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
+        print('current token: ', self.current_token)
+
         if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()
         else:
@@ -128,45 +143,65 @@ class Interpreter(object):
         self.eat(INTEGER)
         return token.value
 
-    def expr1(self):
+    def value(self):
+        """value parser / interpreter.
+        value: factor | parenthesis
+        """
+        if self.current_token.type == INTEGER:
+            return self.factor()
+
+        return self.parenthesis()
+
+    def parenthesis(self):
+        """Parenthesis parser / interpreter.
+        parenthesis: LEFTP term1 RIGHTP
+        term1: addition
+        """
+        self.eat(LEFTP)
+        result = self.addition()
+        self.eat(RIGHTP)           
+        return result
+
+    def multiplication(self):
         """Arithmetic expression parser / interpreter.
 
-        expr   : factor ((MUL | DIV) factor)*
-        factor : INTEGER
-        """
-        result = self.factor()
+        multiplication: value ((MUL | DIV) value)*
+        """ 
+
+        result = self.value()
 
         while self.current_token.type in (MUL, DIV):
             token = self.current_token
             if token.type == MUL:
                 self.eat(MUL)
-                result = result * self.factor()
+                result = result * self.value()
             elif token.type == DIV:
                 self.eat(DIV)
-                result = result / self.factor()
+                result = result / self.value()
 
         return result
 
-    def expr(self):
+    def addition(self):
         """Arithmetic expression parser / interpreter.
 
-        expr   : factor ((MUL | DIV) factor)*
-        factor : INTEGER
+        addition: multiplication ((ADD | MINUS) multiplication)*
         """
-        result = self.expr1()
+        result = self.multiplication()
 
         while self.current_token.type in (ADD, MINUS):
             token = self.current_token
             if token.type == ADD:
                 self.eat(ADD)
-                result = result + self.expr1()
+                result = result + self.multiplication()
             elif token.type == MINUS:
                 self.eat(MINUS)
-                result = result - self.expr1()
+                result = result - self.multiplication()
 
-        if self.current_token.type != EOF:
-            self.error()
+        return result
 
+    def expr(self):
+        result = self.addition()
+        self.eat(EOF)
         return result
 
 
