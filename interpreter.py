@@ -3,11 +3,11 @@ import tok
 
 # rules:
 # factor: INTEGER
-# value: factor | paren
+# value: factor | paren | (PLUS | MINUS) value
 # paren: LPAREN expr RPAREN
 # power: value (POW value)*
 # mul: power ((MUL | DIV) power)*
-# addition: mul ((ADD | MINUS) mul)*
+# addition: mul ((PLUS | MINUS) mul)*
 # expr: additon
 class Interpreter:
     def __init__(self, lexer):
@@ -46,7 +46,16 @@ class Interpreter:
         if self.current_token.type == tok.INTEGER:
             return self.factor()
 
-        return self.paren()
+        if self.current_token.type == tok.LPAREN:
+            return self.paren()
+        
+        if self.current_token.type == tok.PLUS:
+            self.eat(tok.PLUS)
+            return ast.UnaryOp_PLUS(self.value())
+
+        if self.current_token.type == tok.MINUS:
+            self.eat(tok.MINUS)
+            return ast.UnaryOp_MINUS(self.value())
 
     def paren(self) -> ast.AST:
         """Parenthesis parser / interpreter.
@@ -81,7 +90,7 @@ class Interpreter:
             token = self.current_token
             if token.type == tok.MUL:
                 self.eat(tok.MUL)
-                result = ast.BinOP_MUL(result, self.power())
+                result = ast.BinOp_MUL(result, self.power())
             elif token.type == tok.DIV:
                 self.eat(tok.DIV)
                 result = ast.BinOp_DIV(result, self.power())
@@ -91,7 +100,7 @@ class Interpreter:
     def addition(self) -> ast.AST:
         """Arithmetic expression parser / interpreter.
 
-        addition: mul ((ADD | MINUS) mul)*
+        addition: mul ((PLUS | MINUS) mul)*
         """
         result = self.mul()
 
