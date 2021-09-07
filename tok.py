@@ -6,7 +6,10 @@ INTEGER = 'INTEGER'
 PLUS, MINUS, MUL, DIV, POW = 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW'
 LPAREN, RPAREN = 'LPAREN', 'RPAREN'
 EOF = 'EOF'
-
+BEG, END = 'BEGIN', 'END'
+DOT, SEMI, ASSIGN = 'DOT', 'SEMI', 'ASSIGN'
+SEQ, IF, WHILE, FOR = 'SEQ', 'IF', 'WHILE', 'FOR'
+VAR = 'VAR'
 
 class Token(object):
     def __init__(self, type, value):
@@ -29,3 +32,22 @@ class Token(object):
 
     def __repr__(self):
         return self.__str__()
+
+
+SYMBOLS = {
+    "BEGIN": Token(BEG, BEG),
+    'END': Token(END, END),
+    'IF': Token(IF, IF),
+    'WHILE': Token(WHILE, WHILE),
+    'FOR': Token(FOR, FOR),
+    '+': Token(PLUS, '+'),
+    '-': Token(MINUS, '-'),
+    '*': Token(MUL, '*'),
+    '**': Token(POW, '**'),
+    '/': Token(DIV, '/'),
+    '.': Token(DOT, '.'),
+    ';': Token(SEMI, ';'),
+    '(': Token(LPAREN, '('),
+    ')': Token(RPAREN, ')'),
+    ':=': Token(ASSIGN, ':=')
+}

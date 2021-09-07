@@ -2,7 +2,7 @@ import tok
 
 
 class Lexer(object):
-    def __init__(self, text):
+    def __init__(self, text: str):
         # client string input, e.g. "3 * 5", "12 / 3 * 4", etc
         self.text = text
         # self.pos is an index into self.text
@@ -24,15 +24,31 @@ class Lexer(object):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
-    def integer(self):
+    # TODO: support float
+    def integer(self) -> int:
         """Return a (multidigit) integer consumed from the input."""
-        result = ''
+        result = []
         while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
+            result.append(self.current_char)
             self.advance()
-        return int(result)
+        return int(''.join(result))
 
-    def get_next_token(self):
+    def identifier(self) -> str:
+        result = []
+        while self.current_char is not None and self.current_char.isalnum():
+            result.append(self.current_char)
+            self.advance()
+        return ''.join(result)
+
+    def symbol(self) -> str:
+        result = []
+        while self.current_char is not None and not self.current_char.isspace() and not self.current_char.isalnum():
+            result.append(self.current_char)
+            self.advance()
+        return ''.join(result)
+
+    # TODO: improve with a Trie
+    def get_next_token(self) -> tok.Token:
         """Lexical analyzer (also known as scanner or tokenizer)
 
         This method is responsible for breaking a sentence
@@ -47,35 +63,20 @@ class Lexer(object):
             if self.current_char.isdigit():
                 return tok.Token(tok.INTEGER, self.integer())
 
-            if self.current_char == '+':
-                self.advance()
-                return tok.Token(tok.PLUS, '+')
+            identifier = self.identifier()
+            if identifier:  # identifier mustn't be '' or None
+                token = tok.SYMBOLS.get(identifier, None)
+                if token is not None:
+                    return token
+                else:
+                    return tok.Token(tok.VAR, identifier)
 
-            if self.current_char == '-':
-                self.advance()
-                return tok.Token(tok.MINUS, '-')
-
-            if self.current_char == '*':
-                self.advance()
-                if self.current_char == "*":
-                    self.advance()
-                    return tok.Token(tok.POW, '**')
-                return tok.Token(tok.MUL, '*')
-
-            if self.current_char == '/':
-                self.advance()
-                return tok.Token(tok.DIV, '/')
-
-            if self.current_char == '(':
-                self.advance()
-                return tok.Token(tok.LPAREN, '(')
-
-            if self.current_char == ')':
-                self.advance()
-                return tok.Token(tok.RPAREN, ')')
+            symbol = self.symbol()
+            if symbol is not None:
+                token = tok.SYMBOLS.get(symbol, None)
+                if token is not None:
+                    return token
 
             self.error()
 
         return tok.Token(tok.EOF, None)
-
-
