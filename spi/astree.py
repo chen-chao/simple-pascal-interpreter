@@ -1,5 +1,5 @@
 import abc
-import tok
+from . import tok
 
 
 global ENV

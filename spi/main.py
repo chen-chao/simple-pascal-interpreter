@@ -1,5 +1,5 @@
-import lexer
-import interpreter
+from . import lexer
+from . import interpreter
 
 def main():
     while True:

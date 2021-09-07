@@ -1,6 +1,6 @@
-import astree
-from lexer import Lexer
-import tok
+from . import astree
+from .lexer import Lexer
+from . import tok
 
 # rules:
 # factor: INTEGER | variable
